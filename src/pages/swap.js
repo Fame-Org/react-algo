@@ -28,6 +28,14 @@ const defaultAssets = [
     id: "10458941",
     name: "USDC",
   },
+  {
+    id: "27963203",
+    name: "BOARD",
+  },
+  {
+    id: "12400859",
+    name: "Monerium",
+  },
 ];
 
 const Swap = () => {
@@ -422,7 +430,7 @@ const Swap = () => {
 
                   <div class="field is-horizontal">
                     <div class="field-label is-normal">
-                      <label class="label">TO</label>
+                      <label class="label">To</label>
                     </div>
                     <div class="field-body">
                       <div class="field">
@@ -486,8 +494,7 @@ const Swap = () => {
                             <input
                               class="input"
                               id="amountOnLeftSide"
-                              value={`you would get ${parseFloat(
-                                Number(amount) / Number(exchange)
+                              value={`you would get ${parseFloat(Number(exchange)
                               ).toFixed(4)} ${to} for ${amount} ${from}`}
                             />
                             <div class="icon is-small is-left">
