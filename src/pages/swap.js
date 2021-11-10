@@ -130,7 +130,7 @@ const Swap = () => {
   const optIn = () => {
     showProcessingModal("Sending transaction...");
 
-    let asset = defaultAssets.find((o) => o.name === from);
+    let asset = defaultAssets.find((o) => o.name === to);
     let assetId = Number(asset.id);
 
     AlgoSigner.connect()
@@ -192,15 +192,17 @@ const Swap = () => {
 
     let tx1 = {};
     let tx2 = {};
+    let tx3 = {};
     let signedTx1 = {};
     let signedTx2 = {};
+    let signedTx3 = {};
     let txGroup = [];
 
     let assetFrom = defaultAssets.find((o) => o.name === from);
     let assetTo = defaultAssets.find((o) => o.name === to);
     let assetIdFrom = Number(assetFrom.id);
     let assetIdTo = Number(assetTo.id);
-
+    let amt = 3000;
     AlgoSigner.connect()
       // fetch current parameters
       .then(() =>
@@ -209,17 +211,17 @@ const Swap = () => {
           path: "/v2/transactions/params",
         })
       )
-
       // create transactions
       .then((txParams) => {
         let from = address;
         let to = SWAP_ADDRESS;
-
+        
         console.log((Number(amount) / Number(exchange)) * DECIMAL, "amoint!!!");
         const amount1 = amount * DECIMAL;
         const amount2 = +((Number(amount) / Number(exchange)) * DECIMAL);
-
+        
         console.log({ amount1, amount2 });
+
         tx1 = {
           assetIndex: Number(assetIdFrom),
           from: from,
@@ -248,24 +250,46 @@ const Swap = () => {
           flatFee: true,
         };
 
+        tx3 = {
+          assetIndex: Number(10458941),
+          from: from,
+          amount: Math.round(20000),
+          to: to,
+          type: "axfer",
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+
         // assigns a group id to the transaction set
         console.log("reached s");
-        return algosdk.assignGroupID([tx1, tx2]);
+        console.log(tx1);
+        console.log(tx2);
+        console.log(tx3);
+        return algosdk.assignGroupID([tx1, tx2,tx3]);
       })
       .then((txGroup) => {
         console.log("entered!!!");
         // Modify the group fields in original transactions to be base64 encoded strings
         tx1.group = txGroup[0].group.toString("base64");
         tx2.group = txGroup[1].group.toString("base64");
+        tx3.group = txGroup[2].group.toString("base64");
 
-        console.log(tx1.group, tx2.group);
+        console.log(tx1.group, tx2.group,tx3.group);
       })
+      
       // sign transaction 1
       .then(() => AlgoSigner.sign(tx1))
       .then((d) => (signedTx1 = d))
       // sign transaction 2
       .then(() => AlgoSigner.sign(tx2))
       .then((d) => (signedTx2 = d))
+      // sign transaction 3
+      .then(() => AlgoSigner.sign(tx3))
+      .then((d) => (signedTx3 = d))
       .then(() => {
         // Get the decoded binary Uint8Array values from the blobs
         const decoded_1 = new Uint8Array(
@@ -278,15 +302,26 @@ const Swap = () => {
             .split("")
             .map((x) => x.charCodeAt(0))
         );
-
-        // Use their combined length to create a 3rd array
-        let combined_decoded_txns = new Uint8Array(
-          decoded_1.byteLength + decoded_2.byteLength
+        const decoded_3 = new Uint8Array(
+          atob(signedTx3.blob)
+            .split("")
+            .map((x) => x.charCodeAt(0))
         );
 
+        // Use their combined length to create a 3rd array
+        let combined_decoded_txns = new Uint16Array(
+          decoded_1.byteLength + decoded_2.byteLength + decoded_3.byteLength
+        );
+        console.log(combined_decoded_txns);
+        console.log(decoded_2);
+        console.log(decoded_3);
         // Starting at the 0 position, fill in the binary for the first object
         combined_decoded_txns.set(new Uint8Array(decoded_1), 0);
         // Starting at the first object byte length, fill in the 2nd binary value
+        combined_decoded_txns.set(
+          new Uint8Array(decoded_2),
+          decoded_1.byteLength
+        );
         combined_decoded_txns.set(
           new Uint8Array(decoded_2),
           decoded_1.byteLength
@@ -494,7 +529,8 @@ const Swap = () => {
                             <input
                               class="input"
                               id="amountOnLeftSide"
-                              value={`you would get ${parseFloat(Number(exchange)
+                              value={`you would get ${parseFloat(
+                                Number(amount) / Number(exchange)
                               ).toFixed(4)} ${to} for ${amount} ${from}`}
                             />
                             <div class="icon is-small is-left">
