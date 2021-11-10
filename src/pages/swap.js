@@ -308,6 +308,7 @@ const Swap = () => {
             .map((x) => x.charCodeAt(0))
         );
 
+        
         // Use their combined length to create a 3rd array
         let combined_decoded_txns = new Uint16Array(
           decoded_1.byteLength + decoded_2.byteLength + decoded_3.byteLength
