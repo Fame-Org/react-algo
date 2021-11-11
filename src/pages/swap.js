@@ -15,15 +15,15 @@ const defaultAssets = [
     name: "ALGO",
   },
 
-  {
-    id: "21582668",
-    name: "TINYUSDC",
-  },
+  // {
+  //   id: "21582668",
+  //   name: "TINYUSDC",
+  // },
 
-  {
-    id: "22847688",
-    name: "YLDY",
-  },
+  // {
+  //   id: "22847688",
+  //   name: "YLDY",
+  // },
   {
     id: "10458941",
     name: "USDC",
@@ -32,10 +32,10 @@ const defaultAssets = [
     id: "27963203",
     name: "BOARD",
   },
-  {
-    id: "12400859",
-    name: "Monerium",
-  },
+  // {
+  //   id: "12400859",
+  //   name: "Monerium",
+  // },
 ];
 
 const Swap = () => {
@@ -217,9 +217,9 @@ const Swap = () => {
         let to = SWAP_ADDRESS;
         console.log(assetFrom.name);
         
-        console.log((Number(amount) / Number(exchange)) * DECIMAL, "amoint!!!");
-        const amount1 = amount * DECIMAL;
-        const amount2 = +((Number(amount) / Number(exchange)) * DECIMAL);
+        console.log((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL, "amoint!!!");
+        const amount1 = (amount * DECIMAL).toFixed(6);
+        const amount2 = +((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL);
         
         console.log({ amount1, amount2 });
 
@@ -621,7 +621,7 @@ const Swap = () => {
                               id="amountOnLeftSide"
                               value={`you would get ${parseFloat(
                                 Number(amount) / Number(exchange)
-                              ).toFixed(4)} ${to} for ${amount} ${from}`}
+                              ).toFixed(6)} ${to} for ${amount} ${from}`}
                             />
                             <div class="icon is-small is-left">
                               <i class="fas fa-coins"></i>
