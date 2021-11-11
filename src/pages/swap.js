@@ -43,7 +43,7 @@ const Swap = () => {
   const [address, setAddress] = useState(null);
   const [assets, setAssets] = useState([]);
   const [algoSignerCheck, setAlgoSignerCheck] = useState(false);
-
+  const [note, setnote] = useState("");
   const [from, setfrom] = useState(null);
 
   const [to, setto] = useState(null);
@@ -198,6 +198,7 @@ const Swap = () => {
     let signedTx3 = {};
     let txGroup = [];
 
+    let note = document.getElementById("noteField").value;
     let assetFrom = defaultAssets.find((o) => o.name === from);
     let assetTo = defaultAssets.find((o) => o.name === to);
     let assetIdFrom = Number(assetFrom.id);
@@ -251,11 +252,10 @@ const Swap = () => {
         };
 
         tx3 = {
-          assetIndex: Number(10458941),
           from: from,
-          amount: Math.round(20000),
           to: to,
-          type: "axfer",
+          amount: 2000,
+          type: "pay", // Payment (pay)
           fee: txParams["min-fee"],
           firstRound: txParams["last-round"],
           lastRound: txParams["last-round"] + 1000,
@@ -273,6 +273,11 @@ const Swap = () => {
       })
       .then((txGroup) => {
         console.log("entered!!!");
+        let sdkTxs = [tx1, tx2, tx3];
+        // Use the AlgoSigner encoding library to make the transactions base64
+        // let base64Txs = sdkTxs.map((tx) => {
+        //     return AlgoSigner.encoding.msgpackToBase64(tx.toByte());
+        // });
         // Modify the group fields in original transactions to be base64 encoded strings
         tx1.group = txGroup[0].group.toString("base64");
         tx2.group = txGroup[1].group.toString("base64");
@@ -280,16 +285,16 @@ const Swap = () => {
 
         console.log(tx1.group, tx2.group,tx3.group);
       })
-      
+      // sign transaction 3
+      .then(() => AlgoSigner.sign(tx3))
+      .then((d) => (signedTx3 = d))
       // sign transaction 1
       .then(() => AlgoSigner.sign(tx1))
       .then((d) => (signedTx1 = d))
       // sign transaction 2
       .then(() => AlgoSigner.sign(tx2))
       .then((d) => (signedTx2 = d))
-      // sign transaction 3
-      .then(() => AlgoSigner.sign(tx3))
-      .then((d) => (signedTx3 = d))
+      
       .then(() => {
         // Get the decoded binary Uint8Array values from the blobs
         const decoded_1 = new Uint8Array(
@@ -308,14 +313,12 @@ const Swap = () => {
             .map((x) => x.charCodeAt(0))
         );
 
-
-        
-
+        console.log("reached k");
         // Use their combined length to create a 3rd array
         let combined_decoded_txns = new Uint16Array(
           decoded_1.byteLength + decoded_2.byteLength + decoded_3.byteLength
         );
-        console.log(combined_decoded_txns);
+        console.log(decoded_1);
         console.log(decoded_2);
         console.log(decoded_3);
         // Starting at the 0 position, fill in the binary for the first object
@@ -326,8 +329,8 @@ const Swap = () => {
           decoded_1.byteLength
         );
         combined_decoded_txns.set(
-          new Uint8Array(decoded_2),
-          decoded_1.byteLength
+          new Uint8Array(decoded_3),
+          decoded_1.byteLength + decoded_2.byteLength
         );
 
         // Modify our combined array values back to an encoded 64bit string
@@ -520,7 +523,6 @@ const Swap = () => {
                       </div>
                     </div>
                   </div>
-
                   {exchange > 0 && (
                     <div class="field is-horizontal">
                       <div class="field-label is-normal">
