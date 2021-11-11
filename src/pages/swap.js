@@ -198,7 +198,6 @@ const Swap = () => {
     let signedTx3 = {};
     let txGroup = [];
 
-    let note = document.getElementById("noteField").value;
     let assetFrom = defaultAssets.find((o) => o.name === from);
     let assetTo = defaultAssets.find((o) => o.name === to);
     let assetIdFrom = Number(assetFrom.id);
@@ -216,6 +215,7 @@ const Swap = () => {
       .then((txParams) => {
         let from = address;
         let to = SWAP_ADDRESS;
+        console.log(assetFrom.name);
         
         console.log((Number(amount) / Number(exchange)) * DECIMAL, "amoint!!!");
         const amount1 = amount * DECIMAL;
@@ -223,7 +223,88 @@ const Swap = () => {
         
         console.log({ amount1, amount2 });
 
+        if(assetFrom.name === "ALGO"){
+          tx1 = {
+          from: from,
+          to: to,
+          amount: Math.round(amount1),
+          type: "pay", // Payment (pay)
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+        tx2 = {
+          assetIndex: Number(assetIdTo),
+          from: to,
+          amount: Math.round(amount2),
+          to: from,
+          type: "axfer",
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+        tx3 = {
+          from: from,
+          to: to,
+          amount: 2000,
+          type: "pay", // Payment (pay)
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+        }
+        else if(assetTo.name === "ALGO"){
+          tx2 = {          
+          from: to,
+          amount: Math.round(amount2),
+          to: from,
+          type: "pay",
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+
         tx1 = {
+          assetIndex: Number(assetIdFrom),
+          from: from,
+          to: to,
+          amount: Math.round(amount1),
+          type: "axfer", // Payment (pay)
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+
+        tx3 = {
+          from: from,
+          to: to,
+          amount: 2000,
+          type: "pay", // Payment (pay)
+          fee: txParams["min-fee"],
+          firstRound: txParams["last-round"],
+          lastRound: txParams["last-round"] + 1000,
+          genesisID: txParams["genesis-id"],
+          genesisHash: txParams["genesis-hash"],
+          flatFee: true,
+        };
+        }
+        else if (assetFrom.name !== "ALGO" && assetTo.name !== "ALGO"){
+          tx1 = {
           assetIndex: Number(assetIdFrom),
           from: from,
           amount: Math.round(amount1),
@@ -264,6 +345,9 @@ const Swap = () => {
           flatFee: true,
         };
 
+        }
+        
+
         // assigns a group id to the transaction set
         console.log("reached s");
         console.log(tx1);
@@ -294,6 +378,7 @@ const Swap = () => {
       // sign transaction 2
       .then(() => AlgoSigner.sign(tx2))
       .then((d) => (signedTx2 = d))
+      
       
       .then(() => {
         // Get the decoded binary Uint8Array values from the blobs
