@@ -211,6 +211,7 @@ const Swap = () => {
     let signedTx3 = {};
     let signedTx4 = {};
     let txGroup = [];
+    //let to = SWAP_ADDRESS;
     
     let assetFrom = defaultAssets.find((o) => o.name === from);
     let assetTo = defaultAssets.find((o) => o.name === to);
@@ -233,80 +234,86 @@ const Swap = () => {
     console.log({ amount1, amount2 });
     const froms = 'K52ACPMRUMEAED4PQ5UFFBVL6P3FU7DCSC4YX5RRPRLE75FYGPSGFNW24A';
     //let to = SWAP_ADDRESS;
+    console.log('checking ID')
+    console.log({assetIdTo})
+    console.log({assetIdFrom})
 
     console.log(_address)
         if(assetFrom.name === "ALGO"){
-          tx1 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: 'JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM446XSS7RNC4KOPR5HR537U',
-          to: to,
+          tx1 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: Math.round(amount1),
           type: "pay", // Payment (pay)
           suggestedParams
         });
-        tx2 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        
+        tx2 = new algosdk.Transaction({
           assetIndex: Number(assetIdTo),
-          from: to,
+          from: SWAP_ADDRESS,
           amount: Math.round(amount2),
-          to: 'JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM446XSS7RNC4KOPR5HR537U',
+          to: _address,
           type: "axfer",
           suggestedParams
         });
-        tx3 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: 'JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM446XSS7RNC4KOPR5HR537U',
-          to: to,
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: 2000,
           type: "pay", // Payment (pay)
           suggestedParams
         });
         }
         else if(assetTo.name === "ALGO"){
-          tx2 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({          
-          from: to,
-          amount: Math.round(amount2),
-          to: address,
-          type: "pay",
-          suggestedParams
-        });
-
-        tx1 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+          tx1 = new algosdk.Transaction({
           assetIndex: Number(assetIdFrom),
-          from: address,
-          to: to,
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: Math.round(amount1),
           type: "axfer", // Payment (pay)
           suggestedParams
         });
 
-        tx3 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: address,
-          to: to,
+          tx2 = new algosdk.Transaction({          
+          from: SWAP_ADDRESS,
+          amount: Math.round(amount2),
+          to: _address,
+          type: "pay",
+          suggestedParams
+        });
+
+        
+
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: 2000,
           type: "pay", // Payment (pay)
           suggestedParams
         });
         }
         else if (assetFrom.name !== "ALGO" && assetTo.name !== "ALGO"){
-          tx1 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+          tx1 = new algosdk.Transaction({
           assetIndex: Number(assetIdFrom),
-          from: address,
+          from: _address,
           amount: Math.round(amount1),
-          to: to,
-          type: "axfer",
+          to: SWAP_ADDRESS,
+          type: "pay",
           suggestedParams
         });
 
-        tx2 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        tx2 = new algosdk.Transaction({
           assetIndex: Number(assetIdTo),
-          from: to,
+          from: SWAP_ADDRESS,
           amount: Math.round(amount2),
-          to: address,
+          to: _address,
           type: "axfer",
           suggestedParams
         });
 
-        tx3 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: address,
-          to: to,
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: 2000,
           type: "pay", // Payment (pay)
           suggestedParams
@@ -337,7 +344,7 @@ let signedTxs = await AlgoSigner.signTxn([
     let signedTx3Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[2].blob);
 
 // Merge transaction binaries into a single Uint8Array
-let combinedBinaryTxns = new Uint8Array(signedTx1Binary.byteLength + signedTx2Binary.byteLength);
+let combinedBinaryTxns = new Uint8Array(signedTx1Binary.byteLength + signedTx2Binary.byteLength + signedTx3Binary.byteLength);
 combinedBinaryTxns.set(signedTx1Binary, 0);
 combinedBinaryTxns.set(signedTx2Binary, signedTx1Binary.byteLength);
 combinedBinaryTxns.set(signedTx3Binary, signedTx1Binary.byteLength + signedTx2Binary.byteLength);
