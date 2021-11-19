@@ -127,11 +127,15 @@ const Swap = () => {
     }
   };
 
-  const optIn = () => {
+  const optIn = async() => {
     showProcessingModal("Sending transaction...");
 
     let asset = defaultAssets.find((o) => o.name === to);
     let assetId = Number(asset.id);
+    const r = await AlgoSigner.accounts({
+        ledger: "TestNet",
+      });
+      const _address = r[0].address;
 
     AlgoSigner.connect()
       // fetch current parameters
@@ -187,247 +191,173 @@ const Swap = () => {
       });
   };
 
-  const swapAsset = () => {
+  const swapAsset = async() => {
     showProcessingModal("Sending transaction...");
+    const baseServer = 'https://testnet-algorand.api.purestake.io/ps2';
+    const port = '';
+    const token = {
+      'X-API-Key': 'B3SU4KcVKi94Jap2VXkK83xx38bsv95K5UZm2lab',
+    };
+    const client = new algosdk.Algodv2(token, baseServer, port);
+    // get suggested parameters
+    const suggestedParams = await client.getTransactionParams().do();
 
     let tx1 = {};
     let tx2 = {};
     let tx3 = {};
+    let tx4 = {};
     let signedTx1 = {};
     let signedTx2 = {};
     let signedTx3 = {};
+    let signedTx4 = {};
     let txGroup = [];
-
+    //let to = SWAP_ADDRESS;
+    
     let assetFrom = defaultAssets.find((o) => o.name === from);
     let assetTo = defaultAssets.find((o) => o.name === to);
     let assetIdFrom = Number(assetFrom.id);
     let assetIdTo = Number(assetTo.id);
     let amt = 3000;
-    AlgoSigner.connect()
-      // fetch current parameters
-      .then(() =>
-        AlgoSigner.algod({
-          ledger: "TestNet",
-          path: "/v2/transactions/params",
-        })
-      )
-      // create transactions
-      .then((txParams) => {
-        let from = address;
-        let to = SWAP_ADDRESS;
-        console.log(assetFrom.name);
-        
-        console.log((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL, "amoint!!!");
-        const amount1 = (amount * DECIMAL).toFixed(6);
-        const amount2 = +((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL);
-        
-        console.log({ amount1, amount2 });
+    
+    console.log(assetFrom.name);
+    const r = await AlgoSigner.accounts({
+        ledger: "TestNet",
+      });
+      const _address = r[0].address;
+        console.log(from)
+    console.log((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL, "amoint!!!");
+    const amount1 = (amount * DECIMAL).toFixed(6);
+    const amount2 = +((Number(amount) / Number(exchange)).toFixed(6) * DECIMAL);
+    const a = 'c3dhcA==';
+    const b = 'Zmk=';
+    const byt_combined = new Uint8Array([a, b])
+    console.log({ amount1, amount2 });
+    const froms = 'K52ACPMRUMEAED4PQ5UFFBVL6P3FU7DCSC4YX5RRPRLE75FYGPSGFNW24A';
+    //let to = SWAP_ADDRESS;
+    console.log('checking ID')
+    console.log({assetIdTo})
+    console.log({assetIdFrom})
 
+    console.log(_address)
         if(assetFrom.name === "ALGO"){
-          tx1 = {
-          from: from,
-          to: to,
+          tx1 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: Math.round(amount1),
           type: "pay", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-        tx2 = {
+          suggestedParams
+        });
+        
+        tx2 = new algosdk.Transaction({
           assetIndex: Number(assetIdTo),
-          from: to,
+          from: SWAP_ADDRESS,
           amount: Math.round(amount2),
-          to: from,
+          to: _address,
           type: "axfer",
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-        tx3 = {
-          from: from,
-          to: to,
+          suggestedParams
+        });
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: 2000,
           type: "pay", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
+          suggestedParams
+        });
         }
         else if(assetTo.name === "ALGO"){
-          tx2 = {          
-          from: to,
-          amount: Math.round(amount2),
-          to: from,
-          type: "pay",
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-
-        tx1 = {
+          tx1 = new algosdk.Transaction({
           assetIndex: Number(assetIdFrom),
-          from: from,
-          to: to,
+          from: _address,
+          to: SWAP_ADDRESS,
           amount: Math.round(amount1),
           type: "axfer", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
+          suggestedParams
+        });
 
-        tx3 = {
-          from: from,
-          to: to,
-          amount: 2000,
-          type: "pay", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-        }
-        else if (assetFrom.name !== "ALGO" && assetTo.name !== "ALGO"){
-          tx1 = {
-          assetIndex: Number(assetIdFrom),
-          from: from,
-          amount: Math.round(amount1),
-          to: to,
-          type: "axfer",
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-
-        tx2 = {
-          assetIndex: Number(assetIdTo),
-          from: to,
+          tx2 = new algosdk.Transaction({          
+          from: SWAP_ADDRESS,
           amount: Math.round(amount2),
-          to: from,
-          type: "axfer",
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
+          to: _address,
+          type: "pay",
+          suggestedParams
+        });
 
-        tx3 = {
-          from: from,
-          to: to,
-          amount: 2000,
-          type: "pay", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        };
-
-        }
         
 
-        // assigns a group id to the transaction set
-        console.log("reached s");
-        console.log(tx1);
-        console.log(tx2);
-        console.log(tx3);
-        return algosdk.assignGroupID([tx1, tx2,tx3]);
-      })
-      .then((txGroup) => {
-        console.log("entered!!!");
-        let sdkTxs = [tx1, tx2, tx3];
-        // Use the AlgoSigner encoding library to make the transactions base64
-        // let base64Txs = sdkTxs.map((tx) => {
-        //     return AlgoSigner.encoding.msgpackToBase64(tx.toByte());
-        // });
-        // Modify the group fields in original transactions to be base64 encoded strings
-        tx1.group = txGroup[0].group.toString("base64");
-        tx2.group = txGroup[1].group.toString("base64");
-        tx3.group = txGroup[2].group.toString("base64");
-
-        console.log(tx1.group, tx2.group,tx3.group);
-      })
-      // sign transaction 3
-      .then(() => AlgoSigner.sign(tx3))
-      .then((d) => (signedTx3 = d))
-      // sign transaction 1
-      .then(() => AlgoSigner.sign(tx1))
-      .then((d) => (signedTx1 = d))
-      // sign transaction 2
-      .then(() => AlgoSigner.sign(tx2))
-      .then((d) => (signedTx2 = d))
-      
-      
-      .then(() => {
-        // Get the decoded binary Uint8Array values from the blobs
-        const decoded_1 = new Uint8Array(
-          atob(signedTx1.blob)
-            .split("")
-            .map((x) => x.charCodeAt(0))
-        );
-        const decoded_2 = new Uint8Array(
-          atob(signedTx2.blob)
-            .split("")
-            .map((x) => x.charCodeAt(0))
-        );
-        const decoded_3 = new Uint8Array(
-          atob(signedTx3.blob)
-            .split("")
-            .map((x) => x.charCodeAt(0))
-        );
-
-        console.log("reached k");
-        // Use their combined length to create a 3rd array
-        let combined_decoded_txns = new Uint16Array(
-          decoded_1.byteLength + decoded_2.byteLength + decoded_3.byteLength
-        );
-        console.log(decoded_1);
-        console.log(decoded_2);
-        console.log(decoded_3);
-        // Starting at the 0 position, fill in the binary for the first object
-        combined_decoded_txns.set(new Uint8Array(decoded_1), 0);
-        // Starting at the first object byte length, fill in the 2nd binary value
-        combined_decoded_txns.set(
-          new Uint8Array(decoded_2),
-          decoded_1.byteLength
-        );
-        combined_decoded_txns.set(
-          new Uint8Array(decoded_3),
-          decoded_1.byteLength + decoded_2.byteLength
-        );
-
-        // Modify our combined array values back to an encoded 64bit string
-        const grouped_txns = btoa(
-          String.fromCharCode.apply(null, combined_decoded_txns)
-        );
-
-        return AlgoSigner.send({
-          ledger: "TestNet",
-          tx: grouped_txns,
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
+          amount: 2000,
+          type: "pay", // Payment (pay)
+          suggestedParams
         });
-      })
+        }
+        else if (assetFrom.name !== "ALGO" && assetTo.name !== "ALGO"){
+          tx1 = new algosdk.Transaction({
+          assetIndex: Number(assetIdFrom),
+          from: _address,
+          amount: Math.round(amount1),
+          to: SWAP_ADDRESS,
+          type: "pay",
+          suggestedParams
+        });
+
+        tx2 = new algosdk.Transaction({
+          assetIndex: Number(assetIdTo),
+          from: SWAP_ADDRESS,
+          amount: Math.round(amount2),
+          to: _address,
+          type: "axfer",
+          suggestedParams
+        });
+
+        tx3 = new algosdk.Transaction({
+          from: _address,
+          to: SWAP_ADDRESS,
+          amount: 2000,
+          type: "pay", // Payment (pay)
+          suggestedParams
+        });
+
+        }
+        console.log(tx1)
+        console.log(tx2)
+        console.log(tx3)
+        // Assign a Group ID to the transactions using the SDK
+    algosdk.assignGroupID([tx1, tx2, tx3]);
+    let binaryTxs = [tx1.toByte(), tx2.toByte(), tx3.toByte()];
+let base64Txs = binaryTxs.map((binary) => AlgoSigner.encoding.msgpackToBase64(binary));
+let signedTxs = await AlgoSigner.signTxn([
+      {
+        txn: base64Txs[0],
+      },
+      {
+        txn: base64Txs[1],
+      },
+      {
+        txn: base64Txs[2],
+      },
+    ]);
+// Convert first transaction to binary from the response
+    let signedTx1Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[0].blob);
+    let signedTx2Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[1].blob);
+    let signedTx3Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[2].blob);
+
+// Merge transaction binaries into a single Uint8Array
+let combinedBinaryTxns = new Uint8Array(signedTx1Binary.byteLength + signedTx2Binary.byteLength + signedTx3Binary.byteLength);
+combinedBinaryTxns.set(signedTx1Binary, 0);
+combinedBinaryTxns.set(signedTx2Binary, signedTx1Binary.byteLength);
+combinedBinaryTxns.set(signedTx3Binary, signedTx1Binary.byteLength + signedTx2Binary.byteLength);
+// Convert the combined array values back to base64
+let combinedBase64Txns = AlgoSigner.encoding.msgpackToBase64(combinedBinaryTxns);
+
+await AlgoSigner.send({
+  ledger: 'TestNet',
+  tx: combinedBase64Txns,
+})
+
+
+    
       // wait for confirmation from the blockchain
       .then((tx) => waitForAlgosignerConfirmation(tx)) // see algosignerutils.js
       .then((tx) => {
@@ -449,6 +379,9 @@ const Swap = () => {
         hideProcessingModal();
       });
   };
+
+
+
 
   function showProcessingModal(message) {
     document.getElementById("processingModal").classList.add("is-active");
@@ -650,6 +583,8 @@ const Swap = () => {
               >
                 opt In
               </button>
+
+              
             </div>
           )}
         </div>

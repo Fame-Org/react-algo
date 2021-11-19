@@ -1,6 +1,8 @@
 /* global AlgoSigner */
 import React, { useEffect, useCallback, useState } from "react";
 import Nav from "../components/nav";
+import MyAlgo from '@randlabs/myalgo-connect';
+import algosdk from "algosdk";
 
 const Transfer = () => {
   const [addressOne, setaddressOne] = useState(null);
@@ -48,6 +50,23 @@ const Transfer = () => {
       // return JSON.stringify(e, null, 2);
     }
   }, []);
+
+
+  const myAlgoWallet = new MyAlgo();
+
+  const connectToMyAlgo = useCallback(async() => {
+  try {
+    const accounts = await myAlgoWallet.connect();
+
+    const addresses = accounts.map(account => account.address);
+    console.log(addresses)
+    
+  } catch (err) {
+    console.error(err);
+  }
+},[]);
+
+
 
   const ConnectAlgoSigner = useCallback(async () => {
     try {
@@ -118,45 +137,73 @@ const Transfer = () => {
     return tx;
   };
 
-  const signAndSendTransaction = () => {
+  const signAndSendTransaction = async() => {
     showProcessingModal("Sending transaction...");
+    const baseServer = 'https://testnet-algorand.api.purestake.io/ps2';
+    const port = '';
+    const token = {
+      'X-API-Key': 'B3SU4KcVKi94Jap2VXkK83xx38bsv95K5UZm2lab',
+    };
+    const client = new algosdk.Algodv2(token, baseServer, port);
+
+
+    let tx1 = {};
+    let tx2 = {};
+    let signedTx1 = {};
+    let signedTx2 = {};
+    // get suggested parameters
+    const suggestedParams = await client.getTransactionParams().do();
+    tx1 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      from: from,
+      to: 'JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM446XSS7RNC4KOPR5HR537U',
+      amount: +amount,
+      //note: note,
+      type: "pay", // Payment (pay)
+      suggestedParams,
+    });
+    tx2 = new algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      from: 'JMVEVWOU3EAOUFXZ3TXFGS44AGE5VINMXTFM446XSS7RNC4KOPR5HR537U',
+      to: from,
+      amount: +amount,
+      //note: note,
+      type: "pay", // Payment (pay)
+      suggestedParams,
+    });
+    // Assign a Group ID to the transactions using the SDK
+    algosdk.assignGroupID([tx1, tx2]);
+    let binaryTxs = [tx1.toByte(), tx2.toByte()];
+    let base64Txs = binaryTxs.map((binary) => AlgoSigner.encoding.msgpackToBase64(binary));
+    let signedTxs = await AlgoSigner.signTxn([
+      {
+        txn: base64Txs[0],
+      },
+      {
+        txn: base64Txs[1],
+      },
+    ]);
+    // Convert first transaction to binary from the response
+    let signedTx1Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[0].blob);
+    let signedTx2Binary = AlgoSigner.encoding.base64ToMsgpack(signedTxs[1].blob);
+    // Merge transaction binaries into a single Uint8Array
+let combinedBinaryTxns = new Uint8Array(signedTx1Binary.byteLength + signedTx2Binary.byteLength);
+combinedBinaryTxns.set(signedTx1Binary, 0);
+combinedBinaryTxns.set(signedTx2Binary, signedTx1Binary.byteLength);
+
+// Convert the combined array values back to base64
+let combinedBase64Txns = AlgoSigner.encoding.msgpackToBase64(combinedBinaryTxns);
+
+await AlgoSigner.send({
+  ledger: 'TestNet',
+  tx: combinedBase64Txns,
+})
+    
 
     // let from = document.getElementById("fromField").value;
     // let to = document.getElementById("toField").value;
     // let amount = document.getElementById("amountField").value;
     // let note = document.getElementById("noteField").value;
-
-    AlgoSigner.connect()
-      // fetch current parameters
-      .then(() =>
-        AlgoSigner.algod({
-          ledger: "TestNet",
-          path: "/v2/transactions/params",
-        })
-      )
-      // sign new transaction
-      .then((txParams) =>
-        AlgoSigner.sign({
-          from: from,
-          to: to,
-          amount: +amount,
-          note: note,
-          type: "pay", // Payment (pay)
-          fee: txParams["min-fee"],
-          firstRound: txParams["last-round"],
-          lastRound: txParams["last-round"] + 1000,
-          genesisID: txParams["genesis-id"],
-          genesisHash: txParams["genesis-hash"],
-          flatFee: true,
-        })
-      )
-      // send signed transaction
-      .then((signedTx) =>
-        AlgoSigner.send({
-          ledger: "TestNet",
-          tx: signedTx.blob,
-        })
-      )
+    
+    
       // wait for confirmation from the blockchain
       .then((tx) => waitForAlgosignerConfirmation(tx)) // see algosignerutils.js
       .then((tx) => {
@@ -361,6 +408,15 @@ const Transfer = () => {
                 }}
               >
                 Sign and Send
+              </button>
+              <button
+                className="button is-dark is-fullwidth"
+                id="btnSignAndSend"
+                onClick={() => {
+                  connectToMyAlgo();
+                }}
+              >
+                connectToMyAlgo
               </button>
             </div>
           </div>
